@@ -7,7 +7,7 @@
 
 #include <iostream>
 #include "IOhandle.h"
-const std::string GetCurrentSystemTime()
+std::string GetCurrentSystemTime()
 {
     auto t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     struct tm* ptm = localtime(&t);
@@ -19,7 +19,7 @@ const std::string GetCurrentSystemTime()
 }
 class ThreadPool {
 public:
-    ThreadPool(uint32_t threadNum = std::thread::hardware_concurrency()*2):_max_thread_num(threadNum){
+    explicit ThreadPool(uint32_t threadNum = std::thread::hardware_concurrency()*2):_max_thread_num(threadNum){
         if(threadNum < 0 || threadNum > 1000) {
             throw std::exception();
         }
@@ -45,7 +45,7 @@ private:
         for(;;) {
             {
                 std::unique_lock<std::mutex> lock(m_mutex);
-                IOhandle::Pocesscv.wait(lock,[](){return IOhandle::Recvque.empty() == false;});
+                IOhandle::Pocesscv.wait(lock,[](){return !IOhandle::Recvque.empty();});
             }
             if(shutdown) {
                 std::cout<<"thread ID:"<<std::this_thread::get_id()<<" is exited"<<std::endl;
@@ -54,7 +54,7 @@ private:
                 printf("have data need to process\n");
                 std::unique_ptr<data> tmp;
                 IOhandle::Recvque.pop(tmp);
-                message *pdata = reinterpret_cast<message*>(tmp->ptr.get());
+                auto *pdata = reinterpret_cast<message*>(tmp->ptr.get());
                 printf("message id is %d\n",pdata->head.id);
                 if(pdata->head.id == 0) {
                     if(strncmp(pdata->tmp,"time\r\n",pdata->head.len) == 0){
