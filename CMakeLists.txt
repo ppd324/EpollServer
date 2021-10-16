@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.20)
+project(EpollServer)
+set(CMAKE_CXX_STANDARD 14)
+find_package(Threads)
+add_executable(EpollServer main.cpp  IOhandle.cpp  ProcessPool.h IOhandle.h safequeue.h)
+target_link_libraries(EpollServer ${CMAKE_THREAD_LIBS_INIT})
